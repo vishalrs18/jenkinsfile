@@ -1,0 +1,15 @@
+properties([
+    parameters([
+        stringParam(name: 'deployenv'),
+        ]),
+    ])
+node('maven') {
+    
+    stage('Checkout playbook ') { // for display purposes
+        // Get some code from a GitHub repository
+        git branch: 'main', credentialsId: 'f2a21285-619c-43bf-9652-5fa30c27c559', url: 'https://github.com/vishalrs18/Sample-codes.git'
+    }
+    stage('deploy') {
+        sh "ansible-playbook ${deployenv}-deployfile.yaml"
+    }
+}
