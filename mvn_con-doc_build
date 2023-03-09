@@ -1,0 +1,15 @@
+node('os-agent')
+{
+    stage("git checkout")
+     {
+         git url: 'https://github.com/vishalrs18/webapp_jenkins.git'
+     }
+     stage("copy")
+      {
+          sh "docker build -t web:latest . "
+      }
+    stage("maven")
+     {
+         sh """ docker run -dp 8080:8080 --name maven web:latest"""
+    }
+}
