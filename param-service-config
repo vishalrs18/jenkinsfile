@@ -1,0 +1,42 @@
+properties([
+    parameters([
+        choiceParam(name: 'deploymentEnv', choices: ['UAT', 'STG', 'PRD'], description: 'Please Select the Deployment Env'),
+    ])   
+])
+
+node ('maven') {
+    def ENVS=['UAT':['isProductionlike':false, 'deploymentServer':'35.78.174.44','deploymentUser':'ubuntu'],
+             'PRD':['isProductionlike':true, 'deploymentServer':'', 'deploymentUser':''],
+              'STG':['isProductionlike':false, 'deploymentServer':'13.113.129.10','deploymentUser':'ubuntu']]
+    
+    stage ('git checkout step') {
+        git branch: 'main', credentialsId: 'f2a21285-619c-43bf-9652-5fa30c27c559', url: 'https://github.com/vishalrs18/Sample-codes.git'
+    }
+    
+    stage ('maven build step') {
+        def TOOL = tool name: 'Apache Maven 3.6.3', type: 'maven'
+        withEnv(["PATH=$TOOL/bin:$PATH"]) {
+            withCredentials([usernamePassword(credentialsId: 'jfrog', passwordVariable: 'repopass', usernameVariable: 'repouser')]) {
+                sh '''
+                    mvn clean deploy -s settings.xml -Drepo.username=$repouser -Drepo.password=$repopass
+                    '''
+            }
+        }
+    }
+    stage ('deploy the application') {
+        try {
+            sh """
+                ssh ${ENVS[params.deploymentEnv]['deploymentUser']}@${ENVS[params.deploymentEnv]['deploymentServer']} sudo systemctl stop spring-boot-hello-world.service
+            """
+        }
+        catch(e) {
+            
+        }
+        finally {
+            sh """
+                echo 'put /var/jenkins/workspace/jfrog-feature/target/spring-boot-hello-world-0.0.1-SNAPSHOT.jar deployable/' | sftp ${ENVS[params.deploymentEnv]['deploymentUser']}@${ENVS[params.deploymentEnv]['deploymentServer']}
+                ssh -q ${ENVS[params.deploymentEnv]['deploymentUser']}@${ENVS[params.deploymentEnv]['deploymentServer']} sudo systemctl start spring-boot-hello-world.service
+            """
+        }
+    }
+}
