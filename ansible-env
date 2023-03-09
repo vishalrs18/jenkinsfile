@@ -1,0 +1,20 @@
+node('maven') {
+    def deployserver='18.183.23.178'
+    def deployuser='ubuntu'
+    stage('git') { // for display purposes
+        // Get some code from a GitHub repository
+        git branch: 'main', credentialsId: 'f2a21285-619c-43bf-9652-5fa30c27c559', url: 'https://github.com/vishalrs18/Sample-codes'
+    }
+    stage('Build') {
+       def TOOL = tool name: 'Apache Maven 3.6.3', type: 'maven'
+        withEnv(["PATH=$TOOL/bin:$PATH"]) {
+            sh """
+            mvn clean install
+            mvn package
+            """
+        }
+    }
+    stage('deploy') {  
+        sh "ansible-playbook deployfile.yaml"
+}
+}
