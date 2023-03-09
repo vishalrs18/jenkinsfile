@@ -1,0 +1,17 @@
+pipeline {
+    agent any
+        stages
+        {
+            stage('hello')
+            {
+                steps {
+                   echo "hell ${env.BUILD_NUMBER}"
+                }
+            }
+        }
+        post {
+            always {
+                slackSend channel: 'training', message: "${env.BUILD_NUMBER}"
+            }
+        }
+    }
