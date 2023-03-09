@@ -1,0 +1,19 @@
+node('os-agent') {
+    stage('git') { // for display purposes
+        git branch: 'master', credentialsId: 'f2a21285-619c-43bf-9652-5fa30c27c559', url: 'https://github.com/vishalrs18/webapp_jenkins.git'
+    }
+    stage('Build') {
+       sh "mvn clean install"
+    }
+    stage('docker') 
+       withCredentials([string(credentialsId: 'doc', variable: 'doc1')])
+    {
+        sh 'docker build -t img:2 .'
+        sh "docker tag img:2 vishal18doc/vishalnew18"
+        sh "docker login -u vishal18doc -p $doc1"
+        sh "docker push vishal18doc/vishalnew18"
+    }
+    stage('k8s') {
+        build job: 'k8s-cd'
+    }
+}
